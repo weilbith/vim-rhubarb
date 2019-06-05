@@ -90,11 +90,11 @@ function! rhubarb#JsonDecode(string) abort
   let stripped = substitute(a:string,'\C"\(\\.\|[^"\\]\)*"','','g')
   if stripped !~# "[^,:{}\\[\\]0-9.\\-+Eaeflnr-u \n\r\t]"
     try
-      return eval(substitute(a:string,"[\r\n]"," ",'g'))
+      return eval(substitute(a:string,"[\r\n]",' ','g'))
     catch
     endtry
   endif
-  call s:throw("invalid JSON: ".a:string)
+  call s:throw('invalid JSON: '.a:string)
 endfunction
 
 function! rhubarb#JsonEncode(object) abort
@@ -220,7 +220,7 @@ function! rhubarb#Complete(findstart, base) abort
         let prefix = s:repo_homepage().'/issues/'
         let query = a:base
       endif
-      let response = rhubarb#RepoSearch('issues', 'state:open '.query)
+      let response = rhubarb#RepoSearch('issues', query)
       if type(response) != type({})
         call s:throw('unknown error')
       elseif has_key(response, 'message')
@@ -228,7 +228,7 @@ function! rhubarb#Complete(findstart, base) abort
       else
         let issues = get(response, 'items', [])
       endif
-      return map(issues, '{"word": prefix.v:val.number, "abbr": "#".v:val.number, "menu": v:val.title, "info": substitute(v:val.body,"\\r","","g")}')
+      return map(issues, '{"word": prefix.v:val.number, "abbr": "#".v:val.number, "menu": v:val.title." [".v:val.state."]", "info": substitute(v:val.body,"\\r","","g")}')
     endif
   catch /^rhubarb:.*is not a GitHub repository/
     return []
