@@ -201,6 +201,16 @@ function! rhubarb#repo_search(...) abort
   return call('rhubarb#RepoSearch', a:000)
 endfunction
 
+
+function! s:issue_json_to_menu(json) abort
+  let l:word = a:json.number
+  let l:abbreviation = '#' . l:word
+  let l:type = has_key(a:json, 'pull_request') ? '(PR)' : '(I) '
+  let l:menu = l:type . ' ' . a:json.title . ' [' . a:json.state . ']'
+  let l:info = substitute(a:json.body, '\\r', '', 'g')
+  return {'word': l:word, 'abbr': l:abbreviation, 'menu': l:menu, 'info': l:info}
+endfunction
+
 " Section: Issues
 
 let s:reference = '\<\%(\c\%(clos\|resolv\|referenc\)e[sd]\=\|\cfix\%(e[sd]\)\=\)\>'
@@ -228,7 +238,10 @@ function! rhubarb#Complete(findstart, base) abort
       else
         let issues = get(response, 'items', [])
       endif
-      return map(issues, '{"word": prefix.v:val.number, "abbr": "#".v:val.number, "menu": v:val.title." [".v:val.state."]", "info": substitute(v:val.body,"\\r","","g")}')
+
+      let l:base_number = a:base[1:]
+      let l:filtered_issues = filter(issues, 'v:val.number =~ "^".l:base_number')
+      return map(l:filtered_issues, 's:issue_json_to_menu(v:val)')
     endif
   catch /^rhubarb:.*is not a GitHub repository/
     return []
